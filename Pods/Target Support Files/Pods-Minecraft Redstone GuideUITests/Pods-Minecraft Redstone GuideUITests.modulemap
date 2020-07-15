@@ -1,0 +1,6 @@
+framework module Pods_Minecraft_Redstone_GuideUITests {
+  umbrella header "Pods-Minecraft Redstone GuideUITests-umbrella.h"
+
+  export *
+  module * { export * }
+}
