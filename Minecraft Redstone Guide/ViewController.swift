@@ -71,25 +71,24 @@ class ViewController: UIViewController {
         statusBarView.backgroundColor = statusBarColor
         view.addSubview(statusBarView)
         
+        if UserDefaults.standard.array(forKey: "trapsVideoProgress") == nil { //if none of the video progresses have been instantiated
+            UserDefaults.standard.set([0,0,0,0,0,0,0], forKey: "doorsVideoProgress")
+            UserDefaults.standard.set([0,0,0,0], forKey: "farmsVideoProgress")
+            UserDefaults.standard.set([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], forKey: "itemsVideoProgress")
+            UserDefaults.standard.set([0,0,0,0,0,0,0,0,0,0,0], forKey: "bcacVideoProgress")
+            UserDefaults.standard.set([0,0,0], forKey: "wiringVideoProgress")
+            UserDefaults.standard.set([0,0,0,0,0], forKey: "trapsVideoProgress")
+        }
         
         if (global.previouslyLoadedMainVC) {
+            
+            global.loadNewRewardedVideoAd()
+            
             if let purchased = global.loadIAP() {
                 global.fullVersion = purchased
             }
-            
-            global.fullVersion = true
-            
-            
-            if (global.actionCountForReview == 0) { // just installed
-                UserDefaults.standard.set(true, forKey: "paidForApp")
-                global.paidForApp = UserDefaults.standard.bool(forKey: "paidForApp")
-            }
-            
-            if (global.paidForApp) {
-                global.fullVersion = true
-            }
  
-            
+            global.fullVersion = false
             
             if (!global.fullVersion) {
                 let inEEA:Bool = PACConsentInformation.sharedInstance.isRequestLocationInEEAOrUnknown

@@ -6,9 +6,10 @@
 //  Copyright © 2020 Stefan Kuklinsky. All rights reserved.
 //
 
+import GoogleMobileAds
 import UIKit
 
-class WiringViewController: UIViewController {
+class WiringViewController: UIViewController, GADRewardedAdDelegate {
     
     @IBOutlet weak var listTableView: UITableView!
     @IBOutlet weak var mainLabel: UILabel!
@@ -22,11 +23,19 @@ class WiringViewController: UIViewController {
     
     var locked:[Bool] = [false, false, false]
     
+    var rowClickedForVideoAds:Int? = nil
+    
     @IBAction func unwindToWiringVC(segue: UIStoryboardSegue) {
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        for index in 0...(locked.count - 1) {
+            if locked[index] && global.wiringVideoProgress![index] as! Int >= global.numRewardedVideosRequired{
+                locked[index] = false
+            }
+        }
         
         self.transitioningDelegate = self
         
@@ -96,6 +105,31 @@ class WiringViewController: UIViewController {
         }
     }
     
+    func clickedWatchVideo(row:Int) {
+        rowClickedForVideoAds = row
+        let success:Bool = global.showAdAndReloadRewardedVideo(rootViewController: self)
+        
+        if !success {
+            global.popUpForUnableToLoadAd(rootViewController: self)
+            return
+        }
+    }
+    
+    func rewardedAd(_ rewardedAd: GADRewardedAd, userDidEarn reward: GADAdReward) {
+        let row:Int = rowClickedForVideoAds!
+        let progress:Int = global.wiringVideoProgress![row] as! Int + 1
+        global.wiringVideoProgress?[row] = progress
+        UserDefaults.standard.set(global.wiringVideoProgress, forKey: "wiringVideoProgress")
+        if global.wiringVideoProgress?[row] as! Int == global.numRewardedVideosRequired {
+            locked[row] = false
+            self.listTableView.reloadData()
+        }
+    }
+    
+    func rewardedAdDidDismiss(_ rewardedAd: GADRewardedAd) {
+        global.loadNewRewardedVideoAd()
+    }
+    
     func upgradeClicked() {
         global.groupFetch.enter()
         let authorized = StoreObserver.shared.fetchProducts()
@@ -151,11 +185,15 @@ extension WiringViewController: UITableViewDelegate, UITableViewDataSource {
         
         if (!global.fullVersion && locked[indexPath.row]) {
             var alert:UIAlertController
-            alert = UIAlertController(title: "Upgrade to Full Version?", message: "Upgrade to the Full Version to remove ads and unlock all content.", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "No thanks", style: .default, handler: nil))
+            let remainingVids = global.numRewardedVideosRequired - (global.wiringVideoProgress![indexPath.row] as! Int)
+            alert = UIAlertController(title: "Watch Videos or Upgrade to Unlock", message: "Watch two short videos to unlock (" + String(remainingVids) + " remaining), or upgrade to the Full Version to remove ads and unlock all content.", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Watch Video", style: .default, handler: { action in
+                self.clickedWatchVideo(row:indexPath.row)
+            }))
             alert.addAction(UIAlertAction(title: "Upgrade", style: .default, handler: { action in
                 self.upgradeClicked()
             }))
+            alert.addAction(UIAlertAction(title: "No thanks", style: .default, handler: nil))
             self.present(alert, animated: true, completion: nil)
         }
         

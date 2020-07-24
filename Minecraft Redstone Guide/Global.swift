@@ -30,13 +30,21 @@ class Global {
     var couldNotConnectToItunesPurchasing:Bool = false
     
     var interstitial: GADInterstitial!
+    var rewardedAd: GADRewardedAd!
+    let numRewardedVideosRequired = 2
     var personalizedAds = UserDefaults.standard.integer(forKey: "personalizedAds") //zero if nothing stored
     //personalized ads: 0 means not chosen; 1 means personalized in EEA; 2 means not personalized, 5 means not in EEA so no choice - personalized
     var timeOpenedOrLastAdShown:Int = 0
     let MIN_TIME_BETWEEN_ADS:Int = 60 // in seconds
     
-    
     var paidForApp = UserDefaults.standard.bool(forKey: "paidForApp") // false if nothing stored
+    
+    var doorsVideoProgress = UserDefaults.standard.array(forKey: "doorsVideoProgress")
+    var farmsVideoProgress = UserDefaults.standard.array(forKey: "farmsVideoProgress")
+    var itemsVideoProgress = UserDefaults.standard.array(forKey: "itemsVideoProgress")
+    var bcacVideoProgress = UserDefaults.standard.array(forKey: "bcacVideoProgress")
+    var wiringVideoProgress = UserDefaults.standard.array(forKey: "wiringVideoProgress")
+    var trapsVideoProgress = UserDefaults.standard.array(forKey: "trapsVideoProgress")
     
     func saveIAP(didPurchase:Bool) {
         do {
@@ -114,8 +122,8 @@ class Global {
     }
     
     func loadNewInterstitialAd() {
-        global.interstitial = GADInterstitial(adUnitID: "ca-app-pub-3940256099942544/4411468910") // TEST AD ID
-        //global.interstitial = GADInterstitial(adUnitID: "ca-app-pub-6860445609360439/9184873964") // REAL AD ID
+        //global.interstitial = GADInterstitial(adUnitID: "ca-app-pub-3940256099942544/4411468910") // TEST AD ID
+        global.interstitial = GADInterstitial(adUnitID: "ca-app-pub-6860445609360439/9184873964") // REAL AD ID
         
         let request = GADRequest()
         
@@ -128,6 +136,13 @@ class Global {
         interstitial.load(request)
     }
     
+    func popUpForUnableToLoadAd(rootViewController: UIViewController) {
+        let alert = UIAlertController(title: "Unable to Load Rewarded Video", message: "To enable rewarded videos, go to the Settings app. Under Privacy -> Advertising, disable \"Limit Ad Tracking\". Then restart Redstone Guide.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        rootViewController.present(alert, animated: true, completion: nil)
+        return
+    }
+    
     func showAdAndReloadInterstitial(rootViewController: UIViewController) {
         if (interstitial == nil) {
             loadNewInterstitialAd()
@@ -137,9 +152,36 @@ class Global {
             timeOpenedOrLastAdShown = Int(Date().timeIntervalSinceReferenceDate)
             loadNewInterstitialAd()
         } else {
-            print("Ad wasn't ready")
+            
         }
     }
+    
+    func loadNewRewardedVideoAd() {
+        //global.rewardedAd = GADRewardedAd(adUnitID: "ca-app-pub-3940256099942544/1712485313") //testID
+        
+        global.rewardedAd = GADRewardedAd(adUnitID: "ca-app-pub-6860445609360439/7402032706") //realID
+        
+        //var success:Bool = false
+                
+        rewardedAd.load(GADRequest(), completionHandler: nil)
+    }
+
+    
+    func showAdAndReloadRewardedVideo(rootViewController: UIViewController) -> Bool {
+        if (rewardedAd == nil) {
+            loadNewRewardedVideoAd()
+        }
+        if rewardedAd?.isReady == true {
+            rewardedAd?.present(fromRootViewController: rootViewController, delegate:rootViewController as! GADRewardedAdDelegate)
+            //loadNewRewardedVideoAd()
+            return true
+        } else {
+            print("Video ad wasn't ready")
+            return false
+        }
+        
+    }
+    
     
     func shouldShowInterstitial() -> Bool {
         

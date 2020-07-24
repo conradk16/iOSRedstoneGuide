@@ -6,9 +6,10 @@
 //  Copyright © 2020 Stefan Kuklinsky. All rights reserved.
 //
 
+import GoogleMobileAds
 import UIKit
 
-class TrapsViewController: UIViewController {
+class TrapsViewController: UIViewController, GADRewardedAdDelegate {
 
     @IBOutlet weak var listTableView: UITableView!
     @IBOutlet weak var mainLabel: UILabel!
@@ -23,11 +24,19 @@ class TrapsViewController: UIViewController {
     var locked:[Bool] = [false, true, false, false, true]
     var difficulties:[Int] = [2, 3, 3, 4, 4]
     
+    var rowClickedForVideoAds:Int? = nil
+    
     @IBAction func unwindToTrapsVC(segue: UIStoryboardSegue) {
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        for index in 0...(locked.count - 1) {
+            if locked[index] && global.trapsVideoProgress![index] as! Int >= global.numRewardedVideosRequired{
+                locked[index] = false
+            }
+        }
         
         self.transitioningDelegate = self
         
@@ -115,6 +124,31 @@ class TrapsViewController: UIViewController {
         }
     }
     
+    func clickedWatchVideo(row:Int) {
+        rowClickedForVideoAds = row
+        let success:Bool = global.showAdAndReloadRewardedVideo(rootViewController: self)
+        
+        if !success {
+            global.popUpForUnableToLoadAd(rootViewController: self)
+            return
+        }
+    }
+    
+    func rewardedAd(_ rewardedAd: GADRewardedAd, userDidEarn reward: GADAdReward) {
+        let row:Int = rowClickedForVideoAds!
+        let progress:Int = global.trapsVideoProgress![row] as! Int + 1
+        global.trapsVideoProgress?[row] = progress
+        UserDefaults.standard.set(global.trapsVideoProgress, forKey: "trapsVideoProgress")
+        if global.trapsVideoProgress?[row] as! Int == global.numRewardedVideosRequired {
+            locked[row] = false
+            self.listTableView.reloadData()
+        }
+    }
+    
+    func rewardedAdDidDismiss(_ rewardedAd: GADRewardedAd) {
+        global.loadNewRewardedVideoAd()
+    }
+    
     func upgradeClicked() {
         global.groupFetch.enter()
         let authorized = StoreObserver.shared.fetchProducts()
@@ -172,11 +206,15 @@ extension TrapsViewController: UITableViewDelegate, UITableViewDataSource {
         
         if (!global.fullVersion && locked[indexPath.row]) {
             var alert:UIAlertController
-            alert = UIAlertController(title: "Upgrade to Full Version?", message: "Upgrade to the Full Version to remove ads and unlock all content.", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "No thanks", style: .default, handler: nil))
+            let remainingVids = global.numRewardedVideosRequired - (global.trapsVideoProgress![indexPath.row] as! Int)
+            alert = UIAlertController(title: "Watch Videos or Upgrade to Unlock", message: "Watch two short videos to unlock (" + String(remainingVids) + " remaining), or upgrade to the Full Version to remove ads and unlock all content.", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Watch Video", style: .default, handler: { action in
+                self.clickedWatchVideo(row:indexPath.row)
+            }))
             alert.addAction(UIAlertAction(title: "Upgrade", style: .default, handler: { action in
                 self.upgradeClicked()
             }))
+            alert.addAction(UIAlertAction(title: "No thanks", style: .default, handler: nil))
             self.present(alert, animated: true, completion: nil)
         }
         

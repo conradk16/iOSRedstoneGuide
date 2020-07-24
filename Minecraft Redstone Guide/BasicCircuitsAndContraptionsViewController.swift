@@ -6,9 +6,10 @@
 //  Copyright © 2020 Stefan Kuklinsky. All rights reserved.
 //
 
+import GoogleMobileAds
 import UIKit
 
-class BasicCircuitsAndContraptionsViewController: UIViewController {
+class BasicCircuitsAndContraptionsViewController: UIViewController, GADRewardedAdDelegate {
     @IBOutlet weak var mainLabel: UILabel!
     @IBOutlet weak var listTableView: UITableView!
     @IBOutlet weak var backImgView: UIImageView!
@@ -21,11 +22,19 @@ class BasicCircuitsAndContraptionsViewController: UIViewController {
     
     var locked:[Bool] = [false, false, false, false, false, false, false, false, false, false, false]
     
+    var rowClickedForVideoAds:Int? = nil
+    
     @IBAction func unwindToBCACVC(segue: UIStoryboardSegue) {
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        for index in 0...(locked.count - 1) {
+            if locked[index] && global.bcacVideoProgress![index] as! Int >= global.numRewardedVideosRequired{
+                locked[index] = false
+            }
+        }
         
         self.transitioningDelegate = self
         
@@ -151,6 +160,31 @@ class BasicCircuitsAndContraptionsViewController: UIViewController {
         }
     }
     
+    func clickedWatchVideo(row:Int) {
+        rowClickedForVideoAds = row
+        let success:Bool = global.showAdAndReloadRewardedVideo(rootViewController: self)
+        
+        if !success {
+            global.popUpForUnableToLoadAd(rootViewController: self)
+            return
+        }
+    }
+    
+    func rewardedAd(_ rewardedAd: GADRewardedAd, userDidEarn reward: GADAdReward) {
+        let row:Int = rowClickedForVideoAds!
+        let progress:Int = global.bcacVideoProgress![row] as! Int + 1
+        global.bcacVideoProgress?[row] = progress
+        UserDefaults.standard.set(global.bcacVideoProgress, forKey: "bcacVideoProgress")
+        if global.bcacVideoProgress?[row] as! Int == global.numRewardedVideosRequired {
+            locked[row] = false
+            self.listTableView.reloadData()
+        }
+    }
+    
+    func rewardedAdDidDismiss(_ rewardedAd: GADRewardedAd) {
+        global.loadNewRewardedVideoAd()
+    }
+    
     func upgradeClicked() {
         global.groupFetch.enter()
         let authorized = StoreObserver.shared.fetchProducts()
@@ -206,11 +240,15 @@ extension BasicCircuitsAndContraptionsViewController: UITableViewDelegate, UITab
         
         if (!global.fullVersion && locked[indexPath.row]) {
             var alert:UIAlertController
-            alert = UIAlertController(title: "Upgrade to Full Version?", message: "Upgrade to the Full Version to remove ads and unlock all content.", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "No thanks", style: .default, handler: nil))
+            let remainingVids = global.numRewardedVideosRequired - (global.bcacVideoProgress![indexPath.row] as! Int)
+            alert = UIAlertController(title: "Watch Videos or Upgrade to Unlock", message: "Watch two short videos to unlock (" + String(remainingVids) + " remaining), or upgrade to the Full Version to remove ads and unlock all content.", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Watch Video", style: .default, handler: { action in
+                self.clickedWatchVideo(row:indexPath.row)
+            }))
             alert.addAction(UIAlertAction(title: "Upgrade", style: .default, handler: { action in
                 self.upgradeClicked()
             }))
+            alert.addAction(UIAlertAction(title: "No thanks", style: .default, handler: nil))
             self.present(alert, animated: true, completion: nil)
         }
         
