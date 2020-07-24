@@ -87,8 +87,6 @@ class ViewController: UIViewController {
             if let purchased = global.loadIAP() {
                 global.fullVersion = purchased
             }
- 
-            global.fullVersion = false
             
             if (!global.fullVersion) {
                 let inEEA:Bool = PACConsentInformation.sharedInstance.isRequestLocationInEEAOrUnknown

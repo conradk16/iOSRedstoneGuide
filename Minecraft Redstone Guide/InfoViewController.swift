@@ -92,8 +92,8 @@ class InfoViewController: UIViewController {
         
         
         if (!global.fullVersion) {
-            bannerView.adUnitID = "ca-app-pub-6860445609360439/9134438891" // REAL AD ID
-            //bannerView.adUnitID = "ca-app-pub-3940256099942544/2934735716" // TEST AD ID
+            //bannerView.adUnitID = "ca-app-pub-6860445609360439/9134438891" // REAL AD ID
+            bannerView.adUnitID = "ca-app-pub-3940256099942544/2934735716" // TEST AD ID
             bannerView.rootViewController = self
             bannerView.delegate = self
             

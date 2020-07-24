@@ -122,8 +122,8 @@ class Global {
     }
     
     func loadNewInterstitialAd() {
-        //global.interstitial = GADInterstitial(adUnitID: "ca-app-pub-3940256099942544/4411468910") // TEST AD ID
-        global.interstitial = GADInterstitial(adUnitID: "ca-app-pub-6860445609360439/9184873964") // REAL AD ID
+        global.interstitial = GADInterstitial(adUnitID: "ca-app-pub-3940256099942544/4411468910") // TEST AD ID
+        //global.interstitial = GADInterstitial(adUnitID: "ca-app-pub-6860445609360439/9184873964") // REAL AD ID
         
         let request = GADRequest()
         
@@ -157,9 +157,9 @@ class Global {
     }
     
     func loadNewRewardedVideoAd() {
-        //global.rewardedAd = GADRewardedAd(adUnitID: "ca-app-pub-3940256099942544/1712485313") //testID
+        global.rewardedAd = GADRewardedAd(adUnitID: "ca-app-pub-3940256099942544/1712485313") //testID
         
-        global.rewardedAd = GADRewardedAd(adUnitID: "ca-app-pub-6860445609360439/7402032706") //realID
+        //global.rewardedAd = GADRewardedAd(adUnitID: "ca-app-pub-6860445609360439/7402032706") //realID
         
         //var success:Bool = false
                 
